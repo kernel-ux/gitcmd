@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Git Practical Command Hub</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#151d32;--line:#293550;--text:#edf2ff;--muted:#aab6ce;--accent:#7c9cff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#1a2850 0,#0b1020 48%);color:var(--text);font:16px/1.5 system-ui, sans-serif}
+main{max-width:1050px;margin:auto;padding:36px 20px 70px}h1{font-size:clamp(2rem,5vw,3.2rem);line-height:1.1;margin:0 0 12px}.sub{color:var(--muted);margin:0 0 28px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}.program{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;text-align:left;color:var(--text);cursor:pointer;transition:.15s}.program:hover,.program.active{border-color:var(--accent);transform:translateY(-2px)}.program strong{display:block;font-size:1.05rem;margin-bottom:5px}.program span{color:var(--muted);font-size:.9rem}
+#details{margin-top:22px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;display:none}#details h2{margin-top:0}.hint{color:var(--muted);font-size:.92rem}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#080d19;border:1px solid var(--line);border-radius:12px;padding:16px;color:#dce6ff;font-size:.9rem}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}.copy{background:var(--accent);color:#081126;border:0;border-radius:9px;padding:10px 14px;font-weight:700;cursor:pointer}.footer{color:var(--muted);font-size:.85rem;margin-top:28px}
+</style>
+</head>
+<body>
+<main>
+<h1>Git Practical Command Hub</h1>
+<p class="sub">Choose an experiment to view its commands. Copy them into your Ubuntu terminal one at a time and check the output.</p>
+<div class="grid" id="menu"></div>
+<section id="details" aria-live="polite">
+<h2 id="title"></h2><p class="hint" id="description"></p>
+<div class="actions"><button class="copy" id="copy">Copy all commands</button></div>
+<pre><code id="commands"></code></pre>
+<p class="hint" id="note"></p>
+</section>
+<p class="footer">Study helper based on the first six experiments in your practical manual. Replace example names, email addresses, and repository URLs with your own details.</p>
+</main>
+<script>
+const programs = [
+{title:"Program 1 — Setup & Basic Commands",desc:"Initialize a repository, create a file, stage it and commit it.",note:"Run the commands in order. Replace the example name and email with your own Git identity.",commands:`git --version
+git config --global user.name "Your Name"
+git config --global user.email "you@example.com"
+mkdir GitLab1
+cd GitLab1
+git init
+echo "Hello Git" > sample.txt
+cat sample.txt
+git status
+git add sample.txt
+git status
+git commit -m "Initial commit"
+git log --oneline`},
+{title:"Program 2 — Creating & Managing Branches",desc:"Create a feature branch, make a commit, merge it into master and delete the feature branch.",note:"The manual uses master and feature-branch. If your repository uses different branch names, use those names consistently.",commands:`git branch -M master
+git switch -c feature-branch
+git branch
+echo "Login feature added" >> sample.txt
+git add sample.txt
+git commit -m "Add login feature"
+git switch master
+git merge feature-branch
+git log --oneline --graph --all
+git branch -d feature-branch`},
+{title:"Program 3 — Git Stash",desc:"Temporarily save unfinished tracked changes, switch branches and restore them.",note:"A normal stash does not include untracked files. Stage a new file first, or use git stash push -u to include untracked files. Restore on the branch where you want the changes.",commands:`git switch feature-branch
+echo "Work in progress" >> sample.txt
+git status
+git stash push -m "Temporary feature work"
+git stash list
+git switch master
+git switch feature-branch
+git stash apply stash@{0}
+git status
+git stash drop stash@{0}`},
+{title:"Program 4 — Clone a Remote Repository",desc:"Clone a GitHub/GitLab repository to your computer and inspect its remote and history.",note:"Replace the URL and folder name with a real repository URL and its folder name.",commands:`git clone https://github.com/USERNAME/PROJECT.git
+cd PROJECT
+ls
+git remote -v
+git status
+git log --oneline`},
+{title:"Program 5 — Fetch & Rebase",desc:"Fetch remote updates and rebase your local feature branch onto the updated remote base branch.",note:"This requires a cloned repository with a configured remote named origin and a remote branch named master (or main). Use the branch name that actually exists. If a conflict occurs, resolve the file before continuing.",commands:`cd PROJECT
+git branch -a
+git switch feature-branch
+git fetch origin
+git rebase origin/master
+# If the remote default branch is main, use this instead:
+# git rebase origin/main
+# After resolving a conflict:
+git add <filename>
+git rebase --continue
+# To cancel an ongoing rebase:
+git rebase --abort
+git log --oneline --graph --all`},
+{title:"Program 6 — Merge with a Custom Message",desc:"Create a feature commit, switch to master, then merge with --no-ff and a custom merge message.",note:"The manual uses master. If your main branch is named main, switch to main and merge into main instead.",commands:`git switch feature-branch
+echo "Payment feature added" >> sample.txt
+git add sample.txt
+git commit -m "Add payment feature"
+git switch master
+git merge --no-ff feature-branch -m "Merge feature-branch into master"
+git log --oneline --graph --all`}
+];
+const menu=document.getElementById("menu"), details=document.getElementById("details");
+programs.forEach((p,i)=>{const b=document.createElement("button");b.className="program";b.innerHTML=`<strong>${p.title}</strong><span>${p.desc}</span>`;b.addEventListener("click",()=>{document.querySelectorAll(".program").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById("title").textContent=p.title;document.getElementById("description").textContent=p.desc;document.getElementById("commands").textContent=p.commands;document.getElementById("note").textContent=p.note;details.style.display="block";details.scrollIntoView({behavior:"smooth",block:"start"});});menu.appendChild(b);});
+document.getElementById("copy").addEventListener("click",async()=>{const text=document.getElementById("commands").textContent;try{await navigator.clipboard.writeText(text);document.getElementById("copy").textContent="Copied!";setTimeout(()=>document.getElementById("copy").textContent="Copy all commands",1400);}catch(e){document.getElementById("copy").textContent="Select and copy the commands";}});
+</script>
+</body></html>
